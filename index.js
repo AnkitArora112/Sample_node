@@ -1,7 +1,10 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
-const PORT = 3000;
+// Local port
+const PORT = 3000; 
+// Live port
+// const PORT = 3306
 const mysql = require('mysql2');
 
 app.use(express.json()); // for parsing application/json
@@ -9,14 +12,20 @@ app.use(express.urlencoded({ extended: true })); // for parsing application/x-ww
 
 
 // Creating connection with MYSQL
-
+// Local
+// const connection = mysql.createConnection({
+//     host: 'localhost',
+//     user: 'root',
+//     password: 'Akavita@1412#',
+//     database: 'test_db'
+// });
+// Live
 const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'Akavita@1412#',
-    database: 'test_db'
+    host: 'sql12.freesqldatabase.com',
+    user: 'sql12782823',
+    password: 'LQkrYjgHIU',
+    database: 'sql12782823'
 });
-
 
 connection.connect(err => {
     if (err) {
