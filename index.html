@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Accurate Face Orientation Detection</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <style>
+        video,
+        canvas {
+            width: 640px;
+            height: 480px;
+            display: block;
+            margin: 10px auto;
+            border: 1px solid #ccc;
+        }
+
+        #message {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .photos {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .photos img {
+            width: 200px;
+            height: 150px;
+            border: 1px solid #999;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="message">Look LEFT to begin</div>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
+
+    <div class="photos">
+        <img id="leftPhoto" />
+        <img id="rightPhoto" />
+        <img id="centerPhoto" />
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const message = document.getElementById('message');
+        const leftPhoto = document.getElementById('leftPhoto');
+        const rightPhoto = document.getElementById('rightPhoto');
+        const centerPhoto = document.getElementById('centerPhoto');
+
+        let photoStage = 'left';
+        let lastCaptured = 0;
+        let currentDirection = '';
+        let directionStartTime = 0;
+        const STABILITY_TIME = 1000; // 1 second of stable pose
+
+        function capturePhoto(targetImg) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            targetImg.src = canvas.toDataURL('image/png');
+            lastCaptured = Date.now();
+        }
+
+        function getYawDirection(landmarks) {
+            const leftEye = landmarks[33];    // left eye outer
+            const rightEye = landmarks[263];  // right eye outer
+            const nose = landmarks[1];        // nose tip
+
+            const eyeMidX = (leftEye.x + rightEye.x) / 2;
+            const delta = nose.x - eyeMidX;
+
+            if (delta > 0.06) return 'left';     // More strict threshold
+            if (delta < -0.06) return 'right';
+            return 'center';
+        }
+
+        const faceMesh = new FaceMesh({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+        });
+        faceMesh.setOptions({
+            maxNumFaces: 1,
+            refineLandmarks: true,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.7,
+        });
+        faceMesh.onResults((results) => {
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
+
+            const now = Date.now();
+            if (now - lastCaptured < 1500) return;
+
+            const landmarks = results.multiFaceLandmarks[0];
+            const detectedDirection = getYawDirection(landmarks);
+
+            if (detectedDirection !== currentDirection) {
+                currentDirection = detectedDirection;
+                directionStartTime = now;
+                return; // wait for stability
+            }
+
+            // Check for stability
+            if (now - directionStartTime < STABILITY_TIME) return;
+
+            if (photoStage === 'left' && detectedDirection === 'left') {
+                capturePhoto(leftPhoto);
+                photoStage = 'right';
+                message.textContent = '✅ Left captured. Now look RIGHT';
+            } else if (photoStage === 'right' && detectedDirection === 'right') {
+                capturePhoto(rightPhoto);
+                photoStage = 'center';
+                message.textContent = '✅ Right captured. Now face CENTER';
+            } else if (photoStage === 'center' && detectedDirection === 'center') {
+                capturePhoto(centerPhoto);
+                photoStage = 'done';
+                message.textContent = '✅ All photos captured!';
+            } else {
+                message.textContent = `Detected: ${detectedDirection.toUpperCase()} — Waiting for ${photoStage.toUpperCase()}`;
+            }
+        });
+
+        const camera = new Camera(video, {
+            onFrame: async () => {
+                await faceMesh.send({ image: video });
+            },
+            width: 640,
+            height: 480,
+        });
+        camera.start();
+    </script>
+
+
+</body>
+
+</html>
