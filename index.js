@@ -160,7 +160,7 @@ app.post("/api/add/main", (req, res) => {
         }
     );
 });
-
+// Inserting for a restart
 // Delete - User with mobile number
 
 app.post("/api/delete/user", (req, res) => {
