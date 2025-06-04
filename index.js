@@ -105,7 +105,10 @@ app.get("/api/login/email/:email", (req, res) => {
     connection.query(query, [email], (error, results) => {
         if (error) {
             console.error("Error fetching users:", error);
-            return res.status(500).json({ error: "No data found" });
+            return res.status(500).json({ error: "Internal server error" });
+        }
+        if (results.length === 0) {
+            return res.status(404).json({ error: "User not found" });
         }
         res.json(results); // Send the users data as JSON
     });
