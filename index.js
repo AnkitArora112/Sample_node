@@ -68,24 +68,9 @@ app.get("/api/get/users-with-salary", (req, res) => {
     });
 });
 
-// GET - User based data with user mobile number
+// POST -  Register user
 
-app.get("/api/get/users/number/:number", (req, res) => {
-    const { number } = req.params;
-    const query = "SELECT * FROM users WHERE number = ?"; // Your users table
-
-    connection.query(query, [number], (error, results) => {
-        if (error) {
-            console.error("Error fetching users:", error);
-            return res.status(500).json({ error: "Database query failed" });
-        }
-        res.json(results); // Send the users data as JSON
-    });
-});
-
-// POST -  Add users
-
-app.post("/api/add/user", (req, res) => {
+app.post("/api/register/user", (req, res) => {
     const { name, email, number } = req.body;
 
     if (!name || !email || !number) {
@@ -104,6 +89,23 @@ app.post("/api/add/user", (req, res) => {
             .json({ message: "User added successfully", userId: result.insertId });
     });
 });
+
+// Login with email id
+
+app.get("/api/login/email/:email", (req, res) => {
+    const { email } = req.params;
+    const query = "SELECT * FROM users WHERE email = ?"; // Your users table
+
+    connection.query(query, [email], (error, results) => {
+        if (error) {
+            console.error("Error fetching users:", error);
+            return res.status(500).json({ error: "No data found" });
+        }
+        res.json(results); // Send the users data as JSON
+    });
+});
+
+
 
 // POST - add data in table main
 
