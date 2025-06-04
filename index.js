@@ -74,21 +74,27 @@ app.post("/api/register/user", (req, res) => {
     const { name, email, number } = req.body;
 
     if (!name || !email || !number) {
-        return res.status(400).json({ error: "Name and email are required" });
+        return res.status(400).json({ error: "Name, email, and number are required" });
     }
 
-    const sql = "INSERT INTO users (name, email,number) VALUES (?, ?, ?)";
+    const sql = "INSERT INTO users (name, email, number) VALUES (?, ?, ?)";
     connection.query(sql, [name, email, number], (err, result) => {
         if (err) {
+            if (err.code === 'ER_DUP_ENTRY') {
+                return res.status(409).json({ error: "Email already exists" });
+            }
+
             console.error("Insert error:", err);
             return res.status(500).json({ error: "Failed to insert user" });
         }
 
-        res
-            .status(201)
-            .json({ message: "User added successfully", userId: result.insertId });
+        res.status(201).json({
+            message: "User added successfully",
+            userId: result.insertId
+        });
     });
 });
+
 
 // Login with email id
 
