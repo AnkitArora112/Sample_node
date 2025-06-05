@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
+app.use(cors());
 // Local port
 const PORT = 3000;
 // Live port
